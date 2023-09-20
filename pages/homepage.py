@@ -10,7 +10,7 @@ def show_homepage():
 
     ##### FUNC #####
     def chiudi():
-        homepage.destroy()
+        homepage.quit() # chiude l'intera applicazione
 
     def login():
         homepage.destroy()

@@ -9,7 +9,7 @@ def show_gst_prodotti():
 
     ####### FUNC #######
     def chiudi():
-        gst_prodotti.destroy()
+        gst_prodotti.quit() # chiude l'intera applicazione
 
     def indietro():
         gst_prodotti.destroy()
@@ -21,6 +21,9 @@ def show_gst_prodotti():
 
     def nuovo():
         New_Prd.show_nuovo_prodotto()
+
+    def modifica():
+        pass 
 
     ######## GUI ########
     gst_prodotti = Tk()
@@ -37,10 +40,10 @@ def show_gst_prodotti():
     screen_height = gst_prodotti.winfo_screenheight()
 
     # Calcola la posizione centrale della finestra
-    x = (screen_width / 2) - (1030 / 2)
+    x = (screen_width / 2) - (635 / 2)
     y = (screen_height / 2) - (400 / 2)
 
-    gst_prodotti.geometry("%dx%d+%d+%d" % (1030, 400, x, y))
+    gst_prodotti.geometry("%dx%d+%d+%d" % (635, 400, x, y))
     gst_prodotti.wm_iconbitmap("./favicon.ico")
     gst_prodotti.title("Pharmazon")
     gst_prodotti.configure(bg="lightblue")
@@ -85,7 +88,7 @@ def show_gst_prodotti():
     btn_aggiorna.grid(column=2, row=1, padx=(0,0), sticky=E)
 
     # DEFINIAMO LA TABELLA
-    colonne = ('codice', 'prodotto', 'Qnt.', 'prezzo', '')
+    colonne = ('codice', 'prodotto', 'Qnt.', 'prezzo')
     tabella = ttk.Treeview(gst_prodotti, columns=colonne, show='headings')
 
     tabella.heading('codice', text='CODICE')
@@ -93,12 +96,18 @@ def show_gst_prodotti():
     tabella.heading('Qnt.', text='QNT. MAGAZZINO')
     tabella.heading('prezzo', text="PREZZO")
 
+    tabella.column('codice', width=100, anchor='center')
+    tabella.column('prodotto', width=250, anchor='center')
+    tabella.column('Qnt.', width=150, anchor='center')
+    tabella.column('prezzo', width=100, anchor='center')
+
     righe = []
     for n in range(1,50):
-        righe.append((f'{n}', f'prodotto ssdakehi {n}', f'{n}',f'{n}', f'{n}'))
+        righe.append((f'{n}', f'prodotto ssdakehi {n}', f'{n}',f'{n}'))
 
     for riga in righe:
         tabella.insert('', END, values=riga)
+
 
     tabella.grid(column=0, row=2, padx=(15, 0), sticky=NSEW, columnspan=3)
     scrollbar = ttk.Scrollbar(gst_prodotti, orient=VERTICAL, command=tabella.yview)

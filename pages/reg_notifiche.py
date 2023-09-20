@@ -8,7 +8,7 @@ def show_reg_not():
 
     ####### FUNC #######
     def chiudi():
-        reg_not.destroy()
+        reg_not.quit()  # chiude l'intera applicazione
 
     def indietro():
         reg_not.destroy()

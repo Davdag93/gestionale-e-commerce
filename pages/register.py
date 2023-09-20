@@ -1,39 +1,61 @@
 from tkinter import * 
-from tkinter import messagebox
-import pages.login as log
+from tkinter import messagebox  # per generare messaggi pop-up
+import mysql.connector  # per collegare il db
+from mysql.connector import errorcode   # per prendere gli errori dal db
+import bcrypt   # per cryptare la password
+import pages.login as log   # per importare funzionalità da altre pagine
 
 
 def show_register_page():
 
+    #funzione che chiude la pagina corrente e apre la pagina login
     def login():
         register.destroy()
         log.show_login_page()
 
-
-    """     def funcRegister():
-        val_email = input_email.get()
+    #funzione che prende i valori dai campi input e verifica che sia tutto compilato e salva nel db 
+    def nuovo_utente():
+        val_nome = input_nome.get()
+        val_cognome = input_cognome.get()
+        val_username = input_username.get()
         val_psw = input_psw.get()
+        val_psw2 = input_psw2.get()
 
-        if val_email == email and val_psw == password:
-            print("Login effettuata")
-            register.destroy()
-
-            ####################
-                # LOGIN #
-            ####################
-            # wpage.show_welcome_page() 
-
-        elif val_email == email and val_psw != password:
-            print("Password errata")
-            messagebox.showerror(title="Errore!", message="Password errata..")
-        elif val_email != email and val_psw == password:
-            print("Email errata!")
-            messagebox.showerror(title="Errore!", message="Email errata..")
-        else:
-            print("Tutto sbagliato riprova!")
-            messagebox.showerror(title="Errore!", message="Indirizzo email e password errati..") """
-
-
+        try:
+            if val_nome == "" or val_cognome == "" or val_username == "" or val_psw == "" or val_psw2 == "":
+                print("campi lasciati vuoti")
+                messagebox.showwarning(title="Attenzione!", message="Devi riempire tutti i campi per effettuare la registrazione")  #messaggi pop-up
+            elif val_psw != val_psw2:
+                print("errore password non coincidenti!")
+                messagebox.showwarning(title="Attenzione!", message="Password e Ripeti Password non coincidono..")
+            else:
+                # Crittografa la password
+                hashed_password = bcrypt.hashpw(val_psw.encode('utf-8'), bcrypt.gensalt())
+                # Colleghiamo il DB
+                db = mysql.connector.connect(
+                    host="localhost",
+                    user="root",        # abbiamo la possibilità di creare degli user e di impostare ovviamente una password per il DB nascondendola magari con un file .env
+                    password="",
+                    database="pharmazon"    #nome del database
+                )
+                cursore = db.cursor()
+                new_user = "INSERT INTO `utenti`(`nome`, `cognome`, `username`, `password`) VALUES (%s,%s,%s,%s)"   #inserimento valori in tabella utenti
+                values = (val_nome, val_cognome, val_username, hashed_password.decode('utf-8')) # Converto l'hash crittografico binario (byte) in una stringa Unicode leggibile prima di inserirlo nel database, poiché il campo del database è di tipo stringa.
+                cursore.execute(new_user,values)
+                db.commit()
+                db.close()  #chiudiamo la connessione con il db
+                messagebox.showinfo(title="Account creato!", message="Account creato con successo!")
+                print("account creato con successo")
+                login() #chiudiamo la scheda corrente e apriamo la scheda login
+        except mysql.connector.Error as err:
+            if err.errno == errorcode.ER_DUP_ENTRY:
+                # Se l'errore è dovuto a un duplicato di chiave unica (ER_DUP_ENTRY)
+                print("Errore: Username già in uso!")
+                messagebox.showwarning(title="Attenzione!", message="Username già in uso. Scegli un altro username.")
+            else:
+                # Altro tipo di errore
+                print("Errore MySQL:", err)
+                messagebox.showerror(title="Errore!", message="Si è verificato un errore durante la registrazione.")
 
     ##### GUI ######
 
@@ -68,18 +90,18 @@ def show_register_page():
     input_nome.grid(column=1, row=1, sticky=W)
 
     #Cognome
-    label_nome = Label(register, text="Cognome", bg="lightblue")
-    label_nome.grid(column=0, row=2, padx=20, pady=10, sticky=W)
+    label_cognome = Label(register, text="Cognome", bg="lightblue")
+    label_cognome.grid(column=0, row=2, padx=20, pady=10, sticky=W)
 
-    input_nome = Entry(register, width=20)
-    input_nome.grid(column=1, row=2, sticky=W)
+    input_cognome = Entry(register, width=20)
+    input_cognome.grid(column=1, row=2, sticky=W)
 
     #Username
-    label_nome = Label(register, text="Username", bg="lightblue")
-    label_nome.grid(column=0, row=3, padx=20, pady=10, sticky=W)
+    label_username = Label(register, text="Username", bg="lightblue")
+    label_username.grid(column=0, row=3, padx=20, pady=10, sticky=W)
 
-    input_nome = Entry(register, width=20)
-    input_nome.grid(column=1, row=3, sticky=W)
+    input_username = Entry(register, width=20)
+    input_username.grid(column=1, row=3, sticky=W)
 
     #Password
     label_psw = Label(register, text="Password", bg="lightblue")
@@ -98,7 +120,7 @@ def show_register_page():
 
 
     #Button Invio Dati Register
-    btn_invio = Button(register, text="Invio", width=6, height=1, bg="blue",fg="white", command="")
+    btn_invio = Button(register, text="Invio", width=6, height=1, bg="blue",fg="white", command=nuovo_utente)
     btn_invio.grid(column=0, row=6, pady=5, sticky=E, columnspan=2)
 
     # Rimando a login

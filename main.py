@@ -1,7 +1,8 @@
 from tkinter import *
-import pages.login as log
+import pages.login as log   # per importare funzionalità da altre pagine
 import pages.register as reg
 
+# funzione che chiude la finestra corrente e apre la nuova finestra
 def login():
     main.destroy()
     log.show_login_page()
