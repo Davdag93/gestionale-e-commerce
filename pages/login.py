@@ -3,12 +3,8 @@ from tkinter import messagebox
 import pages.register as reg
 import pages.homepage as Hpg
 import mysql.connector  # per collegare il db
-from mysql.connector import errorcode   # per prendere gli errori dal db
 import bcrypt   # per cryptare la password
 
-#database
-email = "a"
-password = "a"
 
 def show_login_page():
 
@@ -59,8 +55,6 @@ def show_login_page():
             # Altro tipo di errore
             print("Errore MySQL:", err)
             messagebox.showerror(title="Errore!", message="Si è verificato un errore durante la login.")
-
-
 
 
     ##### GUI ######

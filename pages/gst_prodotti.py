@@ -3,6 +3,8 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import pages.homepage as Hpg
 import pages.nuovo_prodotto as New_Prd
+import mysql.connector  # per collegare il db
+from tkinter import messagebox
 
 
 def show_gst_prodotti():
@@ -17,14 +19,13 @@ def show_gst_prodotti():
         Hpg.show_homepage()
 
     def aggiorna():
-        gst_prodotti.destroy()
-        show_gst_prodotti()
+        popola_tabella()
 
     def nuovo():
         New_Prd.show_nuovo_prodotto()
 
-    def modifica():
-        pass 
+
+    # LA FUNZIONE popola_tabella() E' STATA DICHIARATA DOPO LA CREAZIONE DELLA TABELLA
 
     ######## GUI ########
     gst_prodotti = Tk()
@@ -42,9 +43,9 @@ def show_gst_prodotti():
 
     # Calcola la posizione centrale della finestra
     x = (screen_width / 2) - (635 / 2)
-    y = (screen_height / 2) - (400 / 2)
+    y = (screen_height / 2) - (410 / 2)
 
-    gst_prodotti.geometry("%dx%d+%d+%d" % (635, 400, x, y))
+    gst_prodotti.geometry("%dx%d+%d+%d" % (635, 410, x, y))
     gst_prodotti.wm_iconbitmap("./favicon.ico")
     gst_prodotti.title("Pharmazon")
     gst_prodotti.configure(bg="lightblue")
@@ -77,11 +78,11 @@ def show_gst_prodotti():
     btn_chiudi.grid(column=2, row=0, sticky=E)
 
     # titolo scheda 
-    label_title = Label(gst_prodotti, text="Elenco Prodotti A-z", bg="lightblue", font=("helvetica", 18))
+    label_title = Label(gst_prodotti, text="Elenco Prodotti A-Z", bg="lightblue", font=("helvetica", 18))
     label_title.grid(column=0, row=1, padx=30, pady=(15, 5), sticky=W)
 
     # bottone per aggiungere un prodotto
-    btn_aggiungi = Button(gst_prodotti, text="Nuovo", width=8, font=("",10), height=1, command=nuovo)
+    btn_aggiungi = Button(gst_prodotti, text="Nuovo", width=8, font=("",10),bg="#05c46b", height=1, command=nuovo)
     btn_aggiungi.grid(column=2, row=1, padx=(0,50), sticky=E)
 
     # bottone per aggiornare la tabella
@@ -90,7 +91,7 @@ def show_gst_prodotti():
 
     # DEFINIAMO LA TABELLA
     colonne = ('codice', 'prodotto', 'Qnt.', 'prezzo')
-    tabella = ttk.Treeview(gst_prodotti, columns=colonne, show='headings')
+    tabella = ttk.Treeview(gst_prodotti, columns=colonne, show='headings', selectmode='browse')
 
     tabella.heading('codice', text='CODICE')
     tabella.heading('prodotto', text='PRODOTTO')
@@ -102,18 +103,68 @@ def show_gst_prodotti():
     tabella.column('Qnt.', width=150, anchor='center')
     tabella.column('prezzo', width=100, anchor='center')
 
-    righe = []
-    for n in range(1,50):
-        righe.append((f'{n}', f'prodotto ssdakehi {n}', f'{n}',f'{n}'))
-
-    for riga in righe:
-        tabella.insert('', END, values=riga)
-
-
     tabella.grid(column=0, row=2, padx=(15, 0), sticky=NSEW, columnspan=3)
     scrollbar = ttk.Scrollbar(gst_prodotti, orient=VERTICAL, command=tabella.yview)
     scrollbar.grid(column=3, row=2, sticky=NS)
     tabella.configure(yscrollcommand=scrollbar.set)
 
+    ##############################
+        # FUNC #        FACENDO RIFERIMENTO ALLA VARIABILE TABELLA, BISOGNA SPOSTARE LA FUNZIONE IN BASSO PER QUESTIONI DI NameError
+    ##############################
+
+    # Funzione per popolare la tabella con i dati dal database da tabella prodotti
+    def popola_tabella():
+        try:
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="pharmazon"
+            )
+
+            cursore = db.cursor()
+            cursore.execute("SELECT `codice_prodotto`, `nome_prodotto`, `quantita`, `prezzo` FROM `prodotti` ORDER BY `nome_prodotto` ASC;")
+
+            # Rimuovi tutte le righe esistenti nella tabella prima di inserire i dati aggiornati
+            for riga in tabella.get_children(): 
+                tabella.delete(riga)
+
+            for riga in cursore:    # dopo aver pulito la tabella la ripopoliamo con i dati aggiornati
+                tabella.insert('', END, values=riga)
+
+            db.close()  # chiudiamo la connessiane al db
+        except mysql.connector.Error as err:
+            print("Errore MySQL:", err)
+            messagebox.showerror(title="Errore!", message="Errore nel caricamento dei dati, chiudere e riaprire il programma")
+
+    # Chiamata iniziale per popolare la tabella all'avvio dell'applicazione
+    popola_tabella()
+
+
+
+    def modifica():
+        # Ottieni l'elemento selezionato dalla tabella
+        selezione = tabella.focus()
+        print(selezione)
+
+    def elimina():
+        # Ottieni l'elemento selezionato dalla tabella
+        selected_item = tabella.selection() 
+        if selected_item:
+            item = tabella.item(selected_item) 
+            values = item["values"]
+            print(values)
+        else: 
+            print("non hai selezionato nessun elemento dalla lista")
+            messagebox.showinfo(title="Not Found!", message="Nessun elemento selezionato")
+
+
+    # bottone per modificare un prodotto dalla tabella
+    btn_modifica = Button(gst_prodotti, text="Modifica", width=8, bg="#ffc048", font=("",10), height=1, command=modifica)
+    btn_modifica.grid(column=2, row=3, padx=(0,80),pady=(10, 5), sticky=E)
+
+    # bottone per eliminare un prodotto dalla tabella
+    btn_elimina = Button(gst_prodotti, text="Elimina", width=8, bg="#ff7979", font=("",10), height=1, command=elimina)
+    btn_elimina.grid(column=2, row=3, padx=(0,0),pady=(10, 5), sticky=E)
 
     gst_prodotti.mainloop()

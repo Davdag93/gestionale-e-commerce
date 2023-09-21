@@ -19,6 +19,8 @@ def show_ordini():
         ordini.destroy()
         show_ordini()
 
+    
+
     ######## GUI ########
     ordini = Tk()
 
