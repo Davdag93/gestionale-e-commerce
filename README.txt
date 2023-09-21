@@ -1,0 +1,1 @@
+creazione da 0 di un gestionale per il controllo del magazzino e degli ordini di un ecommerce in 40 ore
