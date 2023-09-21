@@ -33,6 +33,7 @@ def show_login_page():
             result = cursore.fetchone() # ci restituisce solo 1 elemento 
 
             # Chiudi la connessione al database
+            cursore.close()
             db.close()
 
             if result is not None:

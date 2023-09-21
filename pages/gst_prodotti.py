@@ -5,6 +5,7 @@ import pages.homepage as Hpg
 import pages.nuovo_prodotto as New_Prd
 import mysql.connector  # per collegare il db
 from tkinter import messagebox
+import pages.modifica as mod
 
 
 def show_gst_prodotti():
@@ -132,6 +133,7 @@ def show_gst_prodotti():
             for riga in cursore:    # dopo aver pulito la tabella la ripopoliamo con i dati aggiornati
                 tabella.insert('', END, values=riga)
 
+            cursore.close()
             db.close()  # chiudiamo la connessiane al db
         except mysql.connector.Error as err:
             print("Errore MySQL:", err)
@@ -141,11 +143,18 @@ def show_gst_prodotti():
     popola_tabella()
 
 
-
     def modifica():
         # Ottieni l'elemento selezionato dalla tabella
-        selezione = tabella.focus()
-        print(selezione)
+        selected_item = tabella.selection() 
+        if selected_item:
+            item = tabella.item(selected_item) 
+            values = item["values"]
+            mod.show_modifica_prodotto(values)
+            print(values)
+        else: 
+            print("non hai selezionato nessun elemento dalla lista")
+            messagebox.showinfo(title="Not Found!", message="Nessun elemento selezionato")
+
 
     def elimina():
         # Ottieni l'elemento selezionato dalla tabella
@@ -153,6 +162,43 @@ def show_gst_prodotti():
         if selected_item:
             item = tabella.item(selected_item) 
             values = item["values"]
+            #con la messagebox.askyesno verifichiamo che l'utente sia sicuro dell'eliminazione del prodotto
+            conferma = messagebox.askyesno("Conferma eliminazione", f"Confermi l'eliminazione del prodotto '{values[1]}' con codice '{values[0]}'?")
+            if conferma:
+                try:
+                    # Connessione al database
+                    db = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        password="",
+                        database="pharmazon"
+                    )
+
+                    # ID dell'elemento da eliminare
+                    id_da_eliminare = values[0]
+
+                    # Creazione del cursore
+                    cursore = db.cursor()
+
+                    # Query SQL con il segnaposto
+                    query = "DELETE FROM prodotti WHERE codice_prodotto = %s"
+
+                    # Esecuzione della query con il valore dell'ID
+                    cursore.execute(query, (id_da_eliminare,))
+
+                    # Conferma l'eliminazione nel database
+                    db.commit()
+
+                    # Chiusura del cursore e della connessione
+                    cursore.close()
+                    db.close()
+                    print(f"Eliminazione confermata del prodotto {values[0]}")
+                    messagebox.showinfo(title="Success!", message=f"Il prodotto con codice {values[0]} è stato eliminato con successo!")
+                except mysql.connector.Error as err:
+                    print("Errore MySQL:", err)
+                    messagebox.showerror(title="Errore!", message="Errore nel caricamento dei dati, chiudere e riaprire il programma")
+            else:
+                messagebox.showinfo(title="Eliminazione Annullata", message="Hai annullato l'eliminazione del prodotto")
             print(values)
         else: 
             print("non hai selezionato nessun elemento dalla lista")

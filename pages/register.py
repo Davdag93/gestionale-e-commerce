@@ -69,6 +69,7 @@ def show_register_page():
                 cursore.execute(new_user,values)    # associamo la chiamata INSERT ai valori
 
                 db.commit() #convalidiamo l'inserimento in tabella
+                cursore.close() #chiudiuamo il cursore
                 db.close()  #chiudiamo la connessione con il db
 
                 messagebox.showinfo(title="Account creato!", message="Account creato con successo!")
