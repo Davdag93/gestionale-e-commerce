@@ -8,7 +8,8 @@ def show_ordini():
 
     ####### FUNC #######
     def chiudi():
-        ordini.quit()   # chiude l'intera applicazione
+        ordini.destroy()  # chiudiamo la finestra corrente
+        ordini.quit() # chiude l'intera applicazione
 
     def indietro():
         ordini.destroy()

@@ -9,6 +9,7 @@ def show_gst_prodotti():
 
     ####### FUNC #######
     def chiudi():
+        gst_prodotti.destroy()  # chiudiamo la finestra corrente
         gst_prodotti.quit() # chiude l'intera applicazione
 
     def indietro():

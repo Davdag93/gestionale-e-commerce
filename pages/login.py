@@ -2,6 +2,9 @@ from tkinter import *
 from tkinter import messagebox
 import pages.register as reg
 import pages.homepage as Hpg
+import mysql.connector  # per collegare il db
+from mysql.connector import errorcode   # per prendere gli errori dal db
+import bcrypt   # per cryptare la password
 
 #database
 email = "a"
@@ -15,27 +18,48 @@ def show_login_page():
 
 
     def funcLogin():
-        val_email = input_email.get()
+        val_username = input_username.get()
         val_psw = input_psw.get()
 
-        if val_email == email and val_psw == password:
-            print("Login effettuata")
-            login.destroy()
+        try: 
 
-            ####################
-            # HOMEPAGE #
-            ####################
-            Hpg.show_homepage() 
+            # Colleghiamoci al database
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="pharmazon"
+            )
+            cursore = db.cursor()
 
-        elif val_email == email and val_psw != password:
-            print("Password errata")
-            messagebox.showerror(title="Errore!", message="Password errata..")
-        elif val_email != email and val_psw == password:
-            print("Email errata!")
-            messagebox.showerror(title="Errore!", message="Email errata..")
-        else:
-            print("Tutto sbagliato riprova!")
-            messagebox.showerror(title="Errore!", message="Indirizzo email e password errati..")
+            # Esegui una query per ottenere la password crittografata dall'username fornito
+            cursore.execute("SELECT password FROM utenti WHERE username = %s", (val_username,))
+            result = cursore.fetchone() # ci restituisce solo 1 elemento 
+
+            # Chiudi la connessione al database
+            db.close()
+
+            if result is not None:
+                # Estrai la password crittografata dal risultato della query
+                stored_password = result[0]
+
+                # Confronta la password fornita dall'utente con quella crittografata nel database
+                if bcrypt.checkpw(val_psw.encode('utf-8'), stored_password.encode('utf-8')):
+                    print("Login riuscito!")
+                    login.destroy()
+                    Hpg.show_homepage()
+                    return True
+                else:
+                    print("Password errata. Accesso negato.")
+                    return False
+            else:
+                print("Utente non trovato.")
+                return False
+        except  mysql.connector.Error as err:
+            # Altro tipo di errore
+            print("Errore MySQL:", err)
+            messagebox.showerror(title="Errore!", message="Si è verificato un errore durante la login.")
+
 
 
 
@@ -64,11 +88,11 @@ def show_login_page():
 
 
     #Username
-    label_email = Label(login, text="Username", bg="lightblue")
-    label_email.grid(column=0, row=1, padx=20, pady=10, sticky=W)
+    label_username = Label(login, text="Username", bg="lightblue")
+    label_username.grid(column=0, row=1, padx=20, pady=10, sticky=W)
 
-    input_email = Entry(login, width=20)
-    input_email.grid(column=1, row=1, sticky=W)
+    input_username = Entry(login, width=20)
+    input_username.grid(column=1, row=1, sticky=W)
 
 
     #Password

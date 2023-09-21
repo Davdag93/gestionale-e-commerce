@@ -4,6 +4,7 @@ import mysql.connector  # per collegare il db
 from mysql.connector import errorcode   # per prendere gli errori dal db
 import bcrypt   # per cryptare la password
 import pages.login as log   # per importare funzionalità da altre pagine
+import re # per l'utilizzo delle regex
 
 
 def show_register_page():
@@ -13,24 +14,47 @@ def show_register_page():
         register.destroy()
         log.show_login_page()
 
+    #funzione di validazione della password - fatta in una funzione a se per motivi di possibile riuso e manutenibilità nel tempo
+    def valida_password(password):
+        # La password deve contenere almeno 8 caratteri
+        # Almeno una lettera maiuscola, almeno un numero e almeno un simbolo speciale tra !?@#$%£&
+        password_pattern = r'^(?=.*[A-Z])(?=.*\d)(?=.*[!?\@#\$%\£&])[A-Za-z\d!?\@#\$%\£&]{8,}$'     # regex
+        return re.match(password_pattern, password) is not None     # cerca un match tra la stringa password e la regex se esiste crea un oggetto match con la corrispondenza trovata e verifichiamo che l'oggetto restituito sia diverso da None
+
+
     #funzione che prende i valori dai campi input e verifica che sia tutto compilato e salva nel db 
     def nuovo_utente():
-        val_nome = input_nome.get()
+        val_nome = input_nome.get() # prendiamo i valori dai campi input
         val_cognome = input_cognome.get()
-        val_username = input_username.get()
-        val_psw = input_psw.get()
-        val_psw2 = input_psw2.get()
+        val_username = input_username.get().replace(" ", "")    #rimuoviamo qualsiasi spazio bianco presente all'interno della stringa inizio, nel mezzo, alla fine.
+        val_psw = input_psw.get().replace(" ", "")
+        val_psw2 = input_psw2.get().replace(" ", "")
+
+        username_pattern = r"^[a-zA-Z0-9_]+$"   # regex per non consentire l'uso dei simboli tranne l'underscore nell'username
 
         try:
-            if val_nome == "" or val_cognome == "" or val_username == "" or val_psw == "" or val_psw2 == "":
+            if val_nome == "" or val_cognome == "" or val_username == "" or val_psw == "" or val_psw2 == "":    # verifichiamo che i campi siano tutti compilati
                 print("campi lasciati vuoti")
                 messagebox.showwarning(title="Attenzione!", message="Devi riempire tutti i campi per effettuare la registrazione")  #messaggi pop-up
-            elif val_psw != val_psw2:
+
+            elif not re.match(username_pattern, val_username):    #come per la psw cerchiamo una corrispondenza tra regex e username scelto dall'utente, se questa non viene trovata allora generiamo un pop-up d'errore per segnalare il problema
+                print("Errore: L'username non è valido.")
+                messagebox.showwarning(title="Attenzione!", message="L'username non è valido. Puoi utilizzare solo lettere minuscole, lettere maiuscole, numeri e il carattere underscore.")
+                return
+
+            elif val_psw != val_psw2:   # verifichiamo che l'utente non abbia fatto errori nel ripetere la password
                 print("errore password non coincidenti!")
                 messagebox.showwarning(title="Attenzione!", message="Password e Ripeti Password non coincidono..")
-            else:
+
+            elif not valida_password(val_psw):  # richiamiamo la funzione valida_password e verifichiamo se è ha superato la validazione o meno
+                print("Errore: La password non soddisfa i requisiti.")
+                messagebox.showwarning(title="Attenzione!", message="La password deve contenere almeno 8 caratteri, almeno una lettera maiuscola, almeno un numero e almeno uno dei seguenti simboli: !?@#$%£&")
+                return  
+
+            else:   # se ha superato tutti i controlli allora procediamo al cryptaggio della password, collegamento al DB, inserimento in tabella e chiusura del DB
                 # Crittografa la password
                 hashed_password = bcrypt.hashpw(val_psw.encode('utf-8'), bcrypt.gensalt())
+
                 # Colleghiamo il DB
                 db = mysql.connector.connect(
                     host="localhost",
@@ -38,24 +62,32 @@ def show_register_page():
                     password="",
                     database="pharmazon"    #nome del database
                 )
-                cursore = db.cursor()
+                cursore = db.cursor()   # ci permette di effettuare le chiamate al db
+
                 new_user = "INSERT INTO `utenti`(`nome`, `cognome`, `username`, `password`) VALUES (%s,%s,%s,%s)"   #inserimento valori in tabella utenti
                 values = (val_nome, val_cognome, val_username, hashed_password.decode('utf-8')) # Converto l'hash crittografico binario (byte) in una stringa Unicode leggibile prima di inserirlo nel database, poiché il campo del database è di tipo stringa.
-                cursore.execute(new_user,values)
-                db.commit()
+                cursore.execute(new_user,values)    # associamo la chiamata INSERT ai valori
+
+                db.commit() #convalidiamo l'inserimento in tabella
                 db.close()  #chiudiamo la connessione con il db
+
                 messagebox.showinfo(title="Account creato!", message="Account creato con successo!")
                 print("account creato con successo")
+
                 login() #chiudiamo la scheda corrente e apriamo la scheda login
-        except mysql.connector.Error as err:
+
+        except mysql.connector.Error as err:    # prendiamo gli erorri generati dal DB 
+
             if err.errno == errorcode.ER_DUP_ENTRY:
                 # Se l'errore è dovuto a un duplicato di chiave unica (ER_DUP_ENTRY)
                 print("Errore: Username già in uso!")
                 messagebox.showwarning(title="Attenzione!", message="Username già in uso. Scegli un altro username.")
+
             else:
                 # Altro tipo di errore
                 print("Errore MySQL:", err)
                 messagebox.showerror(title="Errore!", message="Si è verificato un errore durante la registrazione.")
+
 
     ##### GUI ######
 
