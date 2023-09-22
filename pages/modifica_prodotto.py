@@ -112,7 +112,7 @@ def show_modifica_prodotto(values):
     mod_prodotto.title("Pharmazon")
     mod_prodotto.configure(bg="lightblue")
 
-    #Register label
+    #RModifica prodotto label
     label_title = Label(mod_prodotto, text="Modifica Prodotto", font=("helvetica", 16), bg="lightblue")
     label_title.grid(column=0, row=0, padx=(20,0), pady=30, sticky=W)  
 

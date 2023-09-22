@@ -1,17 +1,11 @@
 from tkinter import * 
+from tkinter import ttk
 from tkinter import messagebox
 import mysql.connector  # per collegare il db
 from mysql.connector import errorcode   # per prendere gli errori dal db
 
 
 def show_modifica_ordine(values):
-
-    # funzione che pulisce i campi input, da chiamare dopo l'inserimento dei dati nel DB in modo da preparare il form per un nuovo inserimento
-    def pulisci_campi():
-        input_code.delete(0, 'end')
-        input_nome.delete(0, 'end')
-        input_qnt.delete(0, 'end')
-        input_prezzo.delete(0, 'end')
 
     try:
         db = mysql.connector.connect(
@@ -20,13 +14,17 @@ def show_modifica_ordine(values):
             password="",
             database="pharmazon"
         )
-        cod_p = values[0]
-        print("il cod prodotto",cod_p)
+        cod_p = values[1]
+        data_ora = values[4]
+        id_cliente = values[5]
+        print("i valori",cod_p, data_ora, id_cliente)
         cursore = db.cursor()
-        cursore.execute("SELECT `id_p` FROM `prodotti` WHERE `codice_prodotto` = %s", (cod_p,))
-        id_p = cursore.fetchone()
-        id = id_p[0]
-        print("l'id",id)
+        query = "SELECT `id_o` FROM `ordini` WHERE `cod_prodotto` = %s AND `data_ora` = %s AND `id_cliente` = %s"
+        val = cod_p, data_ora, id_cliente
+        cursore.execute(query, val)
+        id_o = cursore.fetchone()
+        id = id_o[0]
+        print("l'id dell'ordine",id)
 
         cursore.close()
         db.close()  # chiudiamo la connessiane al db
@@ -34,24 +32,21 @@ def show_modifica_ordine(values):
         print("Errore MySQL nel trovare l'ID del prodotto:", err)
 
         #funzione che prende i valori dai campi input e verifica che sia tutto compilato e salva nel db 
-    def modifica_prodotto():
-        val_code = input_code.get().replace(" ", "").upper() # prendiamo i valori dai campi input, rimuoviamo ogni spazio e lo memorizziamo tutto maiuscolo
-        val_nome = input_nome.get().strip().capitalize() # rimuoviamo gli spazi dall'inizio e dalla fine della stringa e mettiamo la prima lettera maiuscola
-        val_qnt = input_qnt.get().replace(" ", "")    #rimuoviamo qualsiasi spazio bianco presente all'interno della stringa inizio, nel mezzo, alla fine.
+    def modifica_ordine():
+        val_code_sp = input_code_sp.get().replace(" ", "").upper() # prendiamo i valori dai campi input, rimuoviamo ogni spazio e lo memorizziamo tutto maiuscolo
+        val_qnt = input_qnt.get().replace(" ", "")    #rimuoviamo qualsiasi spazio bianco presente all'interno della stringa inizio, nel mezzo, alla fine.  
         val_prez = input_prezzo.get().replace(" ", "").replace(".", ",")  # rimuoviamo ogni spazio bianco e sostituiamo il . con la virgola in caso di erorre durante l'inserimento
         val_prezzo = val_prez[0] + " " + val_prez[1:]   #rimettiamo 1 singolo spazio tra il simbolo € ed il prezzo, in modo tale che nel db non ci possano essere errori
+        val_stato_ord = input_stato_ord.get().strip() # rimuoviamo gli spazi dall'inizio e dalla fine della stringa e mettiamo la prima lettera maiuscola
+     
         try:
-            if val_code == "" or val_nome == "" or val_qnt == "" or val_prezzo == "":    # verifichiamo che i campi siano tutti compilati
+            if val_code_sp == "" or val_stato_ord == "" or val_qnt == "" or val_prezzo == "":    # verifichiamo che i campi siano tutti compilati
                 print("campi lasciati vuoti")
                 messagebox.showwarning(title="Attenzione!", message="Devi riempire tutti i campi per effettuare correttamente l'inserimento")  #messaggi pop-up
 
-            elif len(val_code) != 5:
-                print("codice prodotto errato")
-                messagebox.showwarning(title="Attenzione!", message="Il codice prodotto non è valido, verificarne la lunghezza")
-            
             else:
                 # Chiedi conferma all'utente
-                conferma = messagebox.askokcancel("Conferma Modifica", f"Confermi l'aggiornamento del prodotto {val_nome} con codice {val_code}?")
+                conferma = messagebox.askokcancel("Conferma Modifica", f"Confermi l'aggiornamento dell'ordine con codice {val_code_sp}?")
             
                 if conferma:
                     # Collegamento al database
@@ -62,9 +57,9 @@ def show_modifica_ordine(values):
                         database="pharmazon"
                     )
                     # dizionario con i valori dei placeholder
-                    update_values = val_code, val_nome, val_qnt, val_prezzo, id
+                    update_values = val_code_sp, val_qnt, val_prezzo, val_stato_ord, id
                     # query SQL che modifica
-                    update_query = "UPDATE `prodotti` SET `codice_prodotto` = %s, `nome_prodotto` = %s, `quantita` = %s, `prezzo` = %s WHERE `id_p` = %s"
+                    update_query = "UPDATE `ordini` SET `cod_spedizione`= %s,`quantita`= %s,`prezzo_unita`= %s,`stato_ordine`= %s WHERE `id_o` = %s"
 
                     cursore = db.cursor()
                     cursore.execute(update_query, update_values) 
@@ -75,7 +70,7 @@ def show_modifica_ordine(values):
 
                     messagebox.showinfo(title="Ordine aggiornato!", message="Ordine aggiornato con successo!")
                     print("Ordine aggiornato con successo")
-                    pulisci_campi()
+                    mod_ordine.destroy()
                 else:
                     print("Modifica annullata")
 
@@ -84,7 +79,7 @@ def show_modifica_ordine(values):
             if err.errno == errorcode.ER_DUP_ENTRY:
                 # Se l'errore è dovuto a un duplicato di chiave unica (ER_DUP_ENTRY)
                 print("Attenzione!")
-                messagebox.showwarning(title="Attenzione!", message="Codice prodotto già memorizzato. Andare su Modifica per quel prodotto.")
+                messagebox.showwarning(title="Attenzione!", message="Codice spedizione già in uso.")
 
             else:
                 # Altro tipo di errore
@@ -112,26 +107,35 @@ def show_modifica_ordine(values):
     mod_ordine.title("Pharmazon")
     mod_ordine.configure(bg="lightblue")
 
-    #Register label
+    #Modifica Ordine label
     label_title = Label(mod_ordine, text="Modifica Ordine", font=("helvetica", 16), bg="lightblue")
     label_title.grid(column=0, row=0, padx=(20,0), pady=30, sticky=W)  
 
 
-    #Codice prodotto
-    label_code = Label(mod_ordine, text="Codice", bg="lightblue")
-    label_code.grid(column=0, row=1, padx=20, pady=10, sticky=W)
+    #Codice Spedizione
+    label_code_sp = Label(mod_ordine, text="Codice Spedizione", bg="lightblue")
+    label_code_sp.grid(column=0, row=1, padx=20, pady=10, sticky=W)
 
-    input_code = Entry(mod_ordine, width=20)
-    input_code.insert(0, values[0])
-    input_code.grid(column=1, row=1, sticky=W)
+    input_code_sp = Entry(mod_ordine, width=20)
+    input_code_sp.insert(0, values[0])
+    input_code_sp.grid(column=1, row=1, sticky=W)
 
-    #Nome prodotto
-    label_nome = Label(mod_ordine, text="Prodotto", bg="lightblue")
-    label_nome.grid(column=0, row=2, padx=20, pady=10, sticky=W)
+    #Stato ordine
+    label_stato_ord = Label(mod_ordine, text="Stato ordine", bg="lightblue")
+    label_stato_ord.grid(column=0, row=2, padx=20, pady=10, sticky=W)
 
-    input_nome = Entry(mod_ordine, width=20)
-    input_nome.insert(0, values[1])
-    input_nome.grid(column=1, row=2, sticky=W)
+    stato = StringVar()
+    input_stato_ord = ttk.Combobox(mod_ordine, textvariable=stato, width=17)
+    input_stato_ord['values'] = ["Nuovo", "In lavorazione", "Spedito"]
+    input_stato_ord['state'] = 'readonly'
+    """ Entry(mod_ordine, width=20)
+    input_stato_ord.insert(0, values[1]) """
+    input_stato_ord.grid(column=1, row=2, sticky=W)
+
+    """ def stato_selezionato():
+        nuovo_stato = stato.get()
+        print(nuovo_stato)
+    input_stato_ord.bind('<<ComboboxSelected>>', stato_selezionato) """
 
     #Quantità prodotto
     label_qnt = Label(mod_ordine, text="Qnt.", bg="lightblue")
@@ -150,7 +154,7 @@ def show_modifica_ordine(values):
     input_prezzo.grid(column=1, row=4, sticky=W)
 
     #Button Inserimento nuovo prodotto
-    btn_invio = Button(mod_ordine, text="Invia", width=6, height=1, bg="#ffc048", command=modifica_prodotto)
+    btn_invio = Button(mod_ordine, text="Invia", width=6, height=1, bg="#ffc048", command=modifica_ordine)
     btn_invio.grid(column=0, row=6, pady=5, sticky=E, columnspan=2)
 
     label_info = Label(mod_ordine, text="Per modificare più prodotti,\n ripetere più volte l'operazione", bg="lightblue")

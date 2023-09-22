@@ -85,7 +85,7 @@ def show_nuovo_prodotto():
     nv_prodotto.title("Pharmazon")
     nv_prodotto.configure(bg="lightblue")
 
-    #Register label
+    #Label nuovo prodotto
     label_title = Label(nv_prodotto, text="Nuovo Prodotto", font=("helvetica", 16), bg="lightblue")
     label_title.grid(column=0, row=0, padx=(20,0), pady=30, sticky=W)  
 

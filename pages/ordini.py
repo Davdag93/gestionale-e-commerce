@@ -3,8 +3,11 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 import pages.homepage as Hpg
 import mysql.connector  # per collegare il db
+from mysql.connector import errorcode   # per prendere gli errori dal db
 from tkinter import messagebox
 import pages.modifica_ordine as mod_ord
+import random
+import string
 
 
 def show_ordini(username):
@@ -19,10 +22,8 @@ def show_ordini(username):
         Hpg.show_homepage(username)
 
     def aggiorna():
-        ordini.destroy()
-        show_ordini()
-
-    
+        popola_tabella()
+        print("aggiornata")
 
     ######## GUI ########
     ordini = Tk()
@@ -144,7 +145,7 @@ def show_ordini(username):
         if selected_item:
             item = tabella.item(selected_item) 
             values = item["values"]
-            mod_ord.show_modifica_prodotto(values)
+            mod_ord.show_modifica_ordine(values)
             print(values)
         else: 
             print("non hai selezionato nessun elemento dalla lista")
@@ -176,7 +177,7 @@ def show_ordini(username):
                     cursore = db.cursor()
 
                     # Query SQL con il segnaposto
-                    query = "DELETE FROM prodotti WHERE codice_prodotto = %s"
+                    query = "DELETE FROM ordini WHERE codice_prodotto = %s"
 
                     # Esecuzione della query con il valore dell'ID
                     cursore.execute(query, (id_da_eliminare,))
@@ -199,6 +200,88 @@ def show_ordini(username):
             print("non hai selezionato nessun elemento dalla lista")
             messagebox.showinfo(title="Not Found!", message="Nessun elemento selezionato")
 
+    def codice_spedizione():
+        # Ottieni l'elemento selezionato dalla tabella
+        selected_item = tabella.selection() 
+        if selected_item:
+            item = tabella.item(selected_item) 
+            values = item["values"]
+
+        if values[0] == None:
+            # Genera 4 numeri casuali
+            numeri = ''.join(random.choice(string.digits) for _ in range(4))
+            # Genera 6 caratteri (lettere maiuscole) casuali
+            lettere = ''.join(random.choice(string.ascii_uppercase) for _ in range(6))
+            # Combina numeri e lettere in modo casuale
+            codice = ''.join(random.sample(numeri + lettere, 10))
+            print(codice)
+
+            try:
+                db = mysql.connector.connect(
+                    host="localhost",
+                    user="root",
+                    password="",
+                    database="pharmazon"
+                )
+                cod_p = values[1]
+                data_ora = values[4]
+                id_cliente = values[5]
+                print("i valori",cod_p, data_ora, id_cliente)
+                cursore = db.cursor()
+                query = "SELECT `id_o` FROM `ordini` WHERE `cod_prodotto` = %s AND `data_ora` = %s AND `id_cliente` = %s"
+                val = cod_p, data_ora, id_cliente
+                cursore.execute(query, val)
+                id_o = cursore.fetchone()
+                id = id_o[0]
+                print("l'id dell'ordine",id)
+
+                cursore.close()
+                db.close()  # chiudiamo la connessiane al db
+                add_code(id, codice)
+                messagebox.showinfo(title="Codice assegnato!",message="Codice di spedizione assegnato correttamente!")
+            except mysql.connector.Error as err:
+                messagebox.showerror(title="Errore", message="Errore nell'esecuzione dell'operazione. chiudi e riapri il programma.")
+                print("Errore MySQL nel trovare l'ID del prodotto:", err)
+
+        else: 
+            messagebox.showinfo(title="Operazione rifiutata", message="L'ordine ha già un codice assegnato.")
+
+    def add_code(id, codice):
+        try:
+            # Collegamento al database
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="pharmazon"
+            )
+            # query SQL che modifica
+            update_query = "UPDATE `ordini` SET `cod_spedizione`= %s WHERE `id_o` = %s"
+
+            cursore = db.cursor()
+            cursore.execute(update_query, (codice, id)) 
+
+            db.commit()
+            cursore.close()
+            db.close()
+
+            messagebox.showinfo(title="Ordine aggiornato!", message="Codice di spedizione assegnato con successo!")
+            print("Codice di spedizione assegnato con successo!")
+        except mysql.connector.Error as err:    # prendiamo gli erorri generati dal DB 
+
+            if err.errno == errorcode.ER_DUP_ENTRY:
+                # Se l'errore è dovuto a un duplicato di chiave unica (ER_DUP_ENTRY)
+                print("Attenzione!")
+                messagebox.showwarning(title="Attenzione!", message="Codice prodotto già memorizzato. Andare su Modifica per quel prodotto.")
+            else:
+                # Altro tipo di errore
+                print("Errore MySQL:", err)
+                messagebox.showerror(title="Errore!", message="Si è verificato un errore durante l'inserimento.")
+
+
+    # bottone per generare il codice di spedizione
+    btn_genera_cod = Button(ordini, text="Assegna COD.", width=12, bg="lightgreen", font=("",10), height=1, command=codice_spedizione)
+    btn_genera_cod.grid(column=2, row=3, padx=(0,160),pady=(10, 5), sticky=E)
 
     # bottone per modificare un prodotto dalla tabella
     btn_modifica = Button(ordini, text="Modifica", width=8, bg="#ffc048", font=("",10), height=1, command=modifica)
