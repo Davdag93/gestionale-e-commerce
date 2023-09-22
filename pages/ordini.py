@@ -2,9 +2,11 @@ from tkinter import *
 from tkinter import ttk
 from PIL import Image, ImageTk
 import pages.homepage as Hpg
+import mysql.connector  # per collegare il db
+from tkinter import messagebox
 
 
-def show_ordini():
+def show_ordini(username):
 
     ####### FUNC #######
     def chiudi():
@@ -13,7 +15,7 @@ def show_ordini():
 
     def indietro():
         ordini.destroy()
-        Hpg.show_homepage()
+        Hpg.show_homepage(username)
 
     def aggiorna():
         ordini.destroy()
@@ -90,17 +92,114 @@ def show_ordini():
     tabella.heading('Qnt.', text='QNT. MAGAZZINO')
     tabella.heading('prezzo', text="PREZZO")
 
-    righe = []
-    for n in range(1,50):
-        righe.append((f'8SD5FAA5{n}', f'TQYS55D{n}', f'Pappardelle {n}',f'{n}', f'€ {n}'))
-
-    for riga in righe:
-        tabella.insert('', END, values=riga)
-
     tabella.grid(column=0, row=2, padx=(15, 0), sticky=NSEW, columnspan=3)
     scrollbar = ttk.Scrollbar(ordini, orient=VERTICAL, command=tabella.yview)
     scrollbar.grid(column=3, row=2, sticky=NS)
     tabella.configure(yscrollcommand=scrollbar.set)
+
+    ##############################
+        # FUNC #        FACENDO RIFERIMENTO ALLA VARIABILE TABELLA, BISOGNA SPOSTARE LA FUNZIONE IN BASSO PER QUESTIONI DI NameError
+    ##############################
+
+    # Funzione per popolare la tabella con i dati dal database da tabella prodotti
+    def popola_tabella():
+        try:
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="",
+                database="pharmazon"
+            )
+
+            cursore = db.cursor()
+            cursore.execute("SELECT `codice_prodotto`, `nome_prodotto`, `quantita`, `prezzo` FROM `prodotti` ORDER BY `nome_prodotto` ASC;")
+
+            # Rimuovi tutte le righe esistenti nella tabella prima di inserire i dati aggiornati
+            for riga in tabella.get_children(): 
+                tabella.delete(riga)
+
+            for riga in cursore:    # dopo aver pulito la tabella la ripopoliamo con i dati aggiornati
+                tabella.insert('', END, values=riga)
+
+            cursore.close()
+            db.close()  # chiudiamo la connessiane al db
+        except mysql.connector.Error as err:
+            print("Errore MySQL:", err)
+            messagebox.showerror(title="Errore!", message="Errore nel caricamento dei dati, chiudere e riaprire il programma")
+
+    # Chiamata iniziale per popolare la tabella all'avvio dell'applicazione
+    popola_tabella()
+
+
+    def modifica():
+        # Ottieni l'elemento selezionato dalla tabella
+        selected_item = tabella.selection() 
+        if selected_item:
+            item = tabella.item(selected_item) 
+            values = item["values"]
+            mod.show_modifica_prodotto(values)
+            print(values)
+        else: 
+            print("non hai selezionato nessun elemento dalla lista")
+            messagebox.showinfo(title="Not Found!", message="Nessun elemento selezionato")
+
+
+    def elimina():
+        # Ottieni l'elemento selezionato dalla tabella
+        selected_item = tabella.selection() 
+        if selected_item:
+            item = tabella.item(selected_item) 
+            values = item["values"]
+            #con la messagebox.askyesno verifichiamo che l'utente sia sicuro dell'eliminazione del prodotto
+            conferma = messagebox.askyesno("Conferma eliminazione", f"Confermi l'eliminazione del prodotto '{values[1]}' con codice '{values[0]}'?")
+            if conferma:
+                try:
+                    # Connessione al database
+                    db = mysql.connector.connect(
+                        host="localhost",
+                        user="root",
+                        password="",
+                        database="pharmazon"
+                    )
+
+                    # ID dell'elemento da eliminare
+                    id_da_eliminare = values[0]
+
+                    # Creazione del cursore
+                    cursore = db.cursor()
+
+                    # Query SQL con il segnaposto
+                    query = "DELETE FROM prodotti WHERE codice_prodotto = %s"
+
+                    # Esecuzione della query con il valore dell'ID
+                    cursore.execute(query, (id_da_eliminare,))
+
+                    # Conferma l'eliminazione nel database
+                    db.commit()
+
+                    # Chiusura del cursore e della connessione
+                    cursore.close()
+                    db.close()
+                    print(f"Eliminazione confermata del prodotto {values[0]}")
+                    messagebox.showinfo(title="Success!", message=f"Il prodotto con codice {values[0]} è stato eliminato con successo!")
+                except mysql.connector.Error as err:
+                    print("Errore MySQL:", err)
+                    messagebox.showerror(title="Errore!", message="Errore nel caricamento dei dati, chiudere e riaprire il programma")
+            else:
+                messagebox.showinfo(title="Eliminazione Annullata", message="Hai annullato l'eliminazione del prodotto")
+            print(values)
+        else: 
+            print("non hai selezionato nessun elemento dalla lista")
+            messagebox.showinfo(title="Not Found!", message="Nessun elemento selezionato")
+
+
+    # bottone per modificare un prodotto dalla tabella
+    btn_modifica = Button(ordini, text="Modifica", width=8, bg="#ffc048", font=("",10), height=1, command=modifica)
+    btn_modifica.grid(column=2, row=3, padx=(0,80),pady=(10, 5), sticky=E)
+
+    # bottone per eliminare un prodotto dalla tabella
+    btn_elimina = Button(ordini, text="Elimina", width=8, bg="#ff7979", font=("",10), height=1, command=elimina)
+    btn_elimina.grid(column=2, row=3, padx=(0,0),pady=(10, 5), sticky=E)
 
 
     ordini.mainloop()

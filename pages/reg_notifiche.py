@@ -4,7 +4,7 @@ from PIL import Image, ImageTk
 import pages.homepage as Hpg
 
 
-def show_reg_not():
+def show_reg_not(username):
 
     ####### FUNC #######
     def chiudi():
@@ -13,7 +13,7 @@ def show_reg_not():
 
     def indietro():
         reg_not.destroy()
-        Hpg.show_homepage()
+        Hpg.show_homepage(username)
 
     def aggiorna():
         reg_not.destroy()

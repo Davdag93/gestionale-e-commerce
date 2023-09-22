@@ -5,19 +5,19 @@ import pages.homepage as Hpg
 import pages.nuovo_prodotto as New_Prd
 import mysql.connector  # per collegare il db
 from tkinter import messagebox
-import pages.modifica as mod
+import pages.modifica_prodotto as mod_prd
 
 
-def show_gst_prodotti():
+def show_gst_prodotti(username):
 
     ####### FUNC #######
     def chiudi():
-        gst_prodotti.destroy()  # chiudiamo la finestra corrente
         gst_prodotti.quit() # chiude l'intera applicazione
+        gst_prodotti.destroy()  # chiudiamo la finestra corrente
 
     def indietro():
         gst_prodotti.destroy()
-        Hpg.show_homepage()
+        Hpg.show_homepage(username)
 
     def aggiorna():
         popola_tabella()
@@ -149,7 +149,7 @@ def show_gst_prodotti():
         if selected_item:
             item = tabella.item(selected_item) 
             values = item["values"]
-            mod.show_modifica_prodotto(values)
+            mod_prd.show_modifica_prodotto(values)
             print(values)
         else: 
             print("non hai selezionato nessun elemento dalla lista")

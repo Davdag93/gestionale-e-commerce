@@ -6,7 +6,9 @@ import pages.reg_notifiche as reg_not
 from PIL import Image, ImageTk
 
 
-def show_homepage():
+def show_homepage(val_username):
+
+    username = val_username
 
     ##### FUNC #####
     def chiudi():
@@ -18,15 +20,15 @@ def show_homepage():
 
     def gst_prodotti():
         homepage.destroy()
-        gst_prd.show_gst_prodotti()
+        gst_prd.show_gst_prodotti(username)
 
     def ordini():
         homepage.destroy()
-        ord.show_ordini()
+        ord.show_ordini(username)
     
     def reg_notifiche():
         homepage.destroy()
-        reg_not.show_reg_not()
+        reg_not.show_reg_not(username)
 
 
     ##### GUI ######
@@ -86,12 +88,12 @@ def show_homepage():
     btn_ordini.grid(column=1, row=3, padx=(110,20), pady=(5, 80), sticky=N, columnspan=2)
 
     # utente loggato
-    utente_on=Label(homepage, text="Utente Ciccio", bg="lightblue")
+    utente_on=Label(homepage, text=f"Utente {username}", bg="lightblue")
     utente_on.grid(column=3, row=5, padx=5, pady=5, sticky=W)
 
     # bottone per sloggarsi e riloggarsi con un altro account
     btn_logout = Button(homepage, text="LOGOUT", width=8, height=1, bg="#e17055", command=login)
     btn_logout.grid(column=4, row=5, sticky=E,)
-    
+
 
     homepage.mainloop()

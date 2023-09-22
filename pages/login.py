@@ -44,7 +44,7 @@ def show_login_page():
                 if bcrypt.checkpw(val_psw.encode('utf-8'), stored_password.encode('utf-8')):
                     print("Login riuscito!")
                     login.destroy()
-                    Hpg.show_homepage()
+                    Hpg.show_homepage(val_username)
                     return True
                 else:
                     print("Password errata. Accesso negato.")
