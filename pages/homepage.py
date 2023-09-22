@@ -12,7 +12,8 @@ def show_homepage(val_username):
 
     ##### FUNC #####
     def chiudi():
-        homepage.quit() # chiude l'intera applicazione
+        gst_prodotti.quit() # chiude l'intera applicazione
+        gst_prodotti.destroy()  # chiudiamo la finestra corrente
 
     def login():
         homepage.destroy()

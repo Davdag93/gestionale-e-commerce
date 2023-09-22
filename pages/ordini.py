@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import pages.homepage as Hpg
 import mysql.connector  # per collegare il db
 from tkinter import messagebox
+import pages.modifica_ordine as mod_ord
 
 
 def show_ordini(username):
@@ -29,7 +30,6 @@ def show_ordini(username):
     # Funzione vuota che rende inutilizzabile il tasto X della finestra windows
     def do_nothing():
         return
-
     # Assegnamo una nostra funzione al pulsante X di chiusura della finestra windows
     ordini.protocol("WM_DELETE_WINDOW",do_nothing)
 
@@ -38,10 +38,10 @@ def show_ordini(username):
     screen_height = ordini.winfo_screenheight()
 
     # Calcola la posizione centrale della finestra
-    x = (screen_width / 2) - (1030 / 2)
-    y = (screen_height / 2) - (400 / 2)
+    x = (screen_width / 2) - (880 / 2)
+    y = (screen_height / 2) - (405 / 2)
 
-    ordini.geometry("%dx%d+%d+%d" % (1030, 400, x, y))
+    ordini.geometry("%dx%d+%d+%d" % (880, 405, x, y))
     ordini.wm_iconbitmap("./favicon.ico")
     ordini.title("Pharmazon")
     ordini.configure(bg="lightblue")
@@ -52,14 +52,11 @@ def show_ordini(username):
     # LOGO
     # Carica l'immagine
     original_image = Image.open("./python.gif")
-
     # Specifica le nuove dimensioni
     new_width = 50
     new_height = 50
-
     # Ridimensiona l'immagine
     resized_image = original_image.resize((new_width, new_height))
-
     # Converti l'immagine ridimensionata in un formato tkinter-friendly
     logo = ImageTk.PhotoImage(resized_image)
     labelLogo = Label(ordini, image=logo)
@@ -83,14 +80,24 @@ def show_ordini(username):
     btn_aggiorna.grid(column=2, row=1, padx=(0,0), sticky=E)
 
     # DEFINIAMO LA TABELLA
-    colonne = ('cod. spedizione','cod. prodotto', 'prodotto', 'Qnt.', 'prezzo')
+    colonne = ('cod. spedizione','cod. prodotto', 'Qnt.', 'prezzo', 'data_ora', 'id_cliente', 'stato_ordine')
     tabella = ttk.Treeview(ordini, columns=colonne, show='headings')
 
     tabella.heading('cod. spedizione', text='COD. SPEDIZIONE')
     tabella.heading('cod. prodotto', text='COD. PRODOTTO')
-    tabella.heading('prodotto', text='PRODOTTO')
-    tabella.heading('Qnt.', text='QNT. MAGAZZINO')
-    tabella.heading('prezzo', text="PREZZO")
+    tabella.heading('Qnt.', text='QNT.')
+    tabella.heading('prezzo', text='PREZZO UNITÀ')
+    tabella.heading('data_ora', text="DATA ORA")
+    tabella.heading('id_cliente', text="ID CLIENTE")
+    tabella.heading('stato_ordine', text="STATO")
+
+    tabella.column('cod. spedizione', width=150, anchor='center')
+    tabella.column('cod. prodotto', width=110, anchor='center')
+    tabella.column('Qnt.', width=60, anchor='center')
+    tabella.column('prezzo', width=110, anchor='center')
+    tabella.column('data_ora', width=150, anchor='center')
+    tabella.column('id_cliente', width=100, anchor='center')
+    tabella.column('stato_ordine', width=150, anchor='center')
 
     tabella.grid(column=0, row=2, padx=(15, 0), sticky=NSEW, columnspan=3)
     scrollbar = ttk.Scrollbar(ordini, orient=VERTICAL, command=tabella.yview)
@@ -101,7 +108,7 @@ def show_ordini(username):
         # FUNC #        FACENDO RIFERIMENTO ALLA VARIABILE TABELLA, BISOGNA SPOSTARE LA FUNZIONE IN BASSO PER QUESTIONI DI NameError
     ##############################
 
-    # Funzione per popolare la tabella con i dati dal database da tabella prodotti
+    # Funzione per popolare la tabella con i dati dal database da tabella ordini
     def popola_tabella():
         try:
             db = mysql.connector.connect(
@@ -112,7 +119,7 @@ def show_ordini(username):
             )
 
             cursore = db.cursor()
-            cursore.execute("SELECT `codice_prodotto`, `nome_prodotto`, `quantita`, `prezzo` FROM `prodotti` ORDER BY `nome_prodotto` ASC;")
+            cursore.execute("SELECT `cod_spedizione`, `cod_prodotto`, `quantita`, `prezzo_unita`, `data_ora`, `id_cliente`, `stato_ordine` FROM `ordini` ORDER BY `data_ora` DESC;;")
 
             # Rimuovi tutte le righe esistenti nella tabella prima di inserire i dati aggiornati
             for riga in tabella.get_children(): 
@@ -137,7 +144,7 @@ def show_ordini(username):
         if selected_item:
             item = tabella.item(selected_item) 
             values = item["values"]
-            mod.show_modifica_prodotto(values)
+            mod_ord.show_modifica_prodotto(values)
             print(values)
         else: 
             print("non hai selezionato nessun elemento dalla lista")

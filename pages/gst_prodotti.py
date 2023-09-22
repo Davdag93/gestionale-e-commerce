@@ -43,10 +43,10 @@ def show_gst_prodotti(username):
     screen_height = gst_prodotti.winfo_screenheight()
 
     # Calcola la posizione centrale della finestra
-    x = (screen_width / 2) - (635 / 2)
+    x = (screen_width / 2) - (650 / 2)
     y = (screen_height / 2) - (410 / 2)
 
-    gst_prodotti.geometry("%dx%d+%d+%d" % (635, 410, x, y))
+    gst_prodotti.geometry("%dx%d+%d+%d" % (650, 410, x, y))
     gst_prodotti.wm_iconbitmap("./favicon.ico")
     gst_prodotti.title("Pharmazon")
     gst_prodotti.configure(bg="lightblue")

@@ -50,7 +50,7 @@ def show_nuovo_prodotto():
 
                 messagebox.showinfo(title="Prodotto inserito!", message="Prodotto inserito con successo!")
                 print("prodotto inserito con successo")
-                pulisci_campi() # puliamo i campi input, così da preparare il form per un nuovo inserimento
+                nv_prodotto.destroy()
 
         except mysql.connector.Error as err:    # prendiamo gli erorri generati dal DB 
 

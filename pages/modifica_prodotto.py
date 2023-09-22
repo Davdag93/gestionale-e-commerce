@@ -13,6 +13,26 @@ def show_modifica_prodotto(values):
         input_qnt.delete(0, 'end')
         input_prezzo.delete(0, 'end')
 
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database="pharmazon"
+        )
+        cod_p = values[0]
+        print("il cod prodotto",cod_p)
+        cursore = db.cursor()
+        cursore.execute("SELECT `id_p` FROM `prodotti` WHERE `codice_prodotto` = %s", (cod_p,))
+        id_p = cursore.fetchone()
+        id = id_p[0]
+        print("l'id",id)
+
+        cursore.close()
+        db.close()  # chiudiamo la connessiane al db
+    except mysql.connector.Error as err:
+        print("Errore MySQL nel trovare l'ID del prodotto:", err)
+
         #funzione che prende i valori dai campi input e verifica che sia tutto compilato e salva nel db 
     def modifica_prodotto():
         val_code = input_code.get().replace(" ", "").upper() # prendiamo i valori dai campi input, rimuoviamo ogni spazio e lo memorizziamo tutto maiuscolo
@@ -20,7 +40,6 @@ def show_modifica_prodotto(values):
         val_qnt = input_qnt.get().replace(" ", "")    #rimuoviamo qualsiasi spazio bianco presente all'interno della stringa inizio, nel mezzo, alla fine.
         val_prez = input_prezzo.get().replace(" ", "").replace(".", ",")  # rimuoviamo ogni spazio bianco e sostituiamo il . con la virgola in caso di erorre durante l'inserimento
         val_prezzo = val_prez[0] + " " + val_prez[1:]   #rimettiamo 1 singolo spazio tra il simbolo € ed il prezzo, in modo tale che nel db non ci possano essere errori
-        
         try:
             if val_code == "" or val_nome == "" or val_qnt == "" or val_prezzo == "":    # verifichiamo che i campi siano tutti compilati
                 print("campi lasciati vuoti")
@@ -35,29 +54,21 @@ def show_modifica_prodotto(values):
                 conferma = messagebox.askokcancel("Conferma Modifica", f"Confermi l'aggiornamento del prodotto {val_nome} con codice {val_code}?")
             
                 if conferma:
-                    # query SQL che modifica
-                    update_query = "UPDATE `prodotti` SET `codice_prodotto` = %(code)s, `nome_prodotto` = %(nome)s, `quantita` = %(qnt)s, `prezzo` = %(prezzo)s WHERE `codice_prodotto` = %(code)s"
-                    
-                    # INSERIRE QUI DENTRO UNA FUNZIONE CHE FA IL SELECT e passa come props l'id_prodotto ad una funzione che modifica
-                    id_prodotto = "SELECT `id_p`FROM `prodotti` WHERE `codice_prodotto` = %(code)s"
-
-
-                    # Collegati al database e aggiorna il prodotto
+                    # Collegamento al database
                     db = mysql.connector.connect(
                         host="localhost",
                         user="root",
                         password="",
                         database="pharmazon"
                     )
+                    # dizionario con i valori dei placeholder
+                    update_values = val_code, val_nome, val_qnt, val_prezzo, id
+                    # query SQL che modifica
+                    update_query = "UPDATE `prodotti` SET `codice_prodotto` = %s, `nome_prodotto` = %s, `quantita` = %s, `prezzo` = %s WHERE `id_p` = %s"
+
                     cursore = db.cursor()
-                    cursore.execute(update_query, update_values)  # Passa il dizionario dei valori
-                    # Crea un dizionario con i valori dei placeholder
-                    update_values = {
-                        'code': val_code,
-                        'nome': val_nome,
-                        'qnt': val_qnt,
-                        'prezzo': val_prezzo
-                    }
+                    cursore.execute(update_query, update_values) 
+
                     db.commit()
                     cursore.close()
                     db.close()
